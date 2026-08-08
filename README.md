@@ -2,6 +2,27 @@
 
 Measures whether Claude is getting worse, from local Claude Code transcripts.
 
+**The report is [`index.html`](index.html)** — open it in a browser. It is a
+self-contained page with no external assets. If this repo is ever made public,
+`gh api repos/:owner/:repo/pages -X POST -f 'source[branch]=main' -f 'source[path]=/'`
+serves it at `https://<owner>.github.io/claude-regression/` with no other changes.
+
+Headline: from `claude-opus-4-8` to `claude-opus-5`, the share of requests that
+ended with Claude admitting it was wrong went from **15.8% to 32.9%** (Fisher
+exact p = 0.000075), confirmed independently by blind hand-labelling (12% → 32%,
+p = 0.007). Two other claims did not survive: see the report's Verdicts section.
+
+## Contributing data
+
+One machine's transcripts can't separate "the model got worse" from "this user's
+work got harder." If you run this against your own logs, the file worth sharing
+back is `metrics_history.jsonl` — counts only, no message content. Open an issue
+with it attached.
+
+**Check it before you send it.** Never share `archive/`, `metrics.json`,
+`blind_sample.txt`, or `sample_key.json`; all four are gitignored because they
+contain raw transcript text, which holds plaintext secrets.
+
 ## Why this exists at all
 
 `cleanupPeriodDays` defaults to **30**, so `~/.claude/projects` is a rolling
