@@ -38,6 +38,13 @@ OUT = os.path.join(HERE, "index.html")
 
 SMALL_N = 20          # weeks below this are drawn faded; too small to read
 
+# First week that began after the original analysis (run 2026-08-08).
+# Episodes from these weeks postdate the hypothesis, so a comparison
+# restricted to them is out-of-sample: if the headline effect only existed in
+# the window that suggested it, it should vanish here. Only move this date
+# forward when a genuinely new hypothesis is registered.
+HOLDOUT_WEEK = "2026-08-10"
+
 
 # ---------------------------------------------------------------- statistics
 
@@ -198,6 +205,11 @@ def blind_result(base, cur, chosen):
                 a["friction"] += 1
             if "B" in lab:
                 a["restate"] += 1
+            # per-label counts: C = corrected an actual error, D = did
+            # something not asked, B = human restated an instruction
+            for code in ("C", "D", "B"):
+                if code in lab:
+                    a[code] += 1
         res = {"source": chosen,
                "models": {m: dict(c) for m, c in agg.items()},
                "labelled": len(labels),
@@ -312,7 +324,27 @@ def esc(s):
     return html.escape(str(s), quote=False)
 
 
-def verdicts(fx, blind, base, cur, rows):
+def holdout_para(eps, base, cur):
+    """The strongest guard the data allows: the concession comparison rerun on
+    episodes from weeks that postdate the original analysis entirely."""
+    b = [e for e in eps if e["model"] == base]
+    h = [e for e in eps if e["model"] == cur and e["week"] >= HOLDOUT_WEEK]
+    if len(b) < 30 or len(h) < 30:
+        return ""
+    ab = sum(1 for e in b if e["admitted"])
+    ah = sum(1 for e in h if e["admitted"])
+    p = fisher(ab, len(b) - ab, ah, len(h) - ah)
+    tail = ("The effect is not an artifact of the window that produced it."
+            if p < 0.05 else
+            "Not significant on its own yet; more weeks are needed.")
+    return (f"<p>Out-of-sample: restricted to {esc(cur.replace('claude-', ''))} "
+            f"requests from weeks beginning {HOLDOUT_WEEK} or later &mdash; data that "
+            f"did not exist when this analysis was first run &mdash; the rate is "
+            f"<strong>{100*ah/len(h):.1f}%</strong> (n = {len(h)}) against the same "
+            f"baseline, p = {pfmt(p)}. {tail}</p>")
+
+
+def verdicts(fx, blind, base, cur, rows, eps):
     """Chips are derived, not asserted -- a dead effect reports as dead."""
     d = {r[0]: r for r in fx}
     V = []
@@ -325,22 +357,39 @@ def verdicts(fx, blind, base, cur, rows):
     conc = d.get("Requests ending in a concession")
     bl = d.get("Blind-labelled friction turns")
     if conc:
-        cls, lab = chip(conc)
-        agree = bl and bl[5] and conc[5]
-        body = (f"<p>Automated admission-counting gives <strong>&times;{conc[3]:.2f}</strong> "
+        cls, _ = chip(conc)
+        # The title claims exactly what is measured. A concession is an
+        # admission, not a verified error, so "mistakes doubled" would
+        # overclaim -- see the second paragraph.
+        title = ("Requests ending in a concession roughly doubled"
+                 if conc[3] >= 1.8 else
+                 f"Requests ending in a concession moved &times;{conc[3]:.2f}")
+        body = (f"<p>Automated counting gives <strong>&times;{conc[3]:.2f}</strong> "
                 f"(p = {pfmt(conc[4])}), taking the share of requests that end with Claude "
                 f"conceding from <strong>{conc[1]}</strong> to <strong>{conc[2]}</strong>.")
         if bl:
-            body += (f" Hand-labelling {blind['labelled']} randomly sampled exchanges &mdash; with the "
-                     f"model identity withheld from the labeller until every label was fixed &mdash; "
-                     f"gives <strong>&times;{bl[3]:.2f}</strong> (p = {pfmt(bl[4])}).")
-            body += (" Two methods that share no assumptions agree.</p>" if agree else
-                     " The two methods do not agree, which is the thing to resolve before citing either.</p>")
+            body += (f" Blind hand-labelling of {blind['labelled']} sampled exchanges "
+                     f"&mdash; model identity withheld until every label was fixed &mdash; "
+                     f"{'agrees' if bl[5] and conc[5] else 'points the same way'}: "
+                     f"<strong>&times;{bl[3]:.2f}</strong> (p = {pfmt(bl[4])}).</p>")
         else:
             body += " The blind labelling has not been re-run against this pair.</p>"
-        V.append((cls, "Mistakes I have to catch roughly doubled"
-                  if conc[3] >= 1.8 else
-                  f"Requests ending in a concession moved &times;{conc[3]:.2f}", body))
+        body += ("<p>A concession is an admission, not a verified error. More actual "
+                 "mistakes move this number &mdash; but so would a model that concedes "
+                 "more readily, one that recognises its own errors better, or a harder "
+                 "mix of work arriving in the same weeks.")
+        if blind:
+            b0, c0 = blind["base"], blind["cur"]
+            cb, cc = b0.get("C", 0), c0.get("C", 0)
+            nb, nc = b0.get("n", 0), c0.get("n", 0)
+            if nb and nc and (cb or cc):
+                p = fisher(cb, nb - cb, cc, nc - cc)
+                body += (f" The strictest blind label &mdash; a caught, corrected error "
+                         f"&mdash; went {cb}&rarr;{cc} of {nb}: same direction, but a "
+                         f"sample too small to stand alone (p = {pfmt(p)}).")
+        body += "</p>"
+        body += holdout_para(eps, base, cur)
+        V.append((cls, title, body))
 
     tok = d.get("Output tokens per request")
     tools = d.get("Tool calls per request")
@@ -355,7 +404,11 @@ def verdicts(fx, blind, base, cur, rows):
         b0, b1 = burn_pair(rows, base, cur)
         body = "<p>" + (" and ".join(parts).capitalize() + ". " if parts else "")
         body += (f"The share of all generated tokens spent inside requests that end in a "
-                 f"concession went from <strong>{b0:.1f}% to {b1:.1f}%</strong>.</p>")
+                 f"concession went from <strong>{b0:.1f}% to {b1:.1f}%</strong>. "
+                 f"Rising tool calls and tokens are as consistent with a deliberately "
+                 f"more thorough agentic style as with churn &mdash; the churn proxies "
+                 f"in the final verdict do not separate the two &mdash; but the cost "
+                 f"per request is real either way.</p>")
         if chars:
             body += (f"<p>Meanwhile the characters <em>I</em> type per request "
                      f"{'rose' if chars[3] >= 1 else 'fell'} <strong>{abs(chars[3]-1)*100:.0f}%</strong> "
@@ -432,7 +485,7 @@ def render(rows, fx, weeks, V, tot, base, cur, blind, stale_eps):
             hero.append((label, f"{r[3]:.2f}&times;",
                          f"{r[1]} &rarr; {r[2]} per request<br>Fisher exact p = {pfmt(r[4])}"))
     b0, b1 = burn_pair(rows, base, cur)
-    hero.append(("Output tokens spent being wrong", f"{b1:.1f}%",
+    hero.append(("Output tokens in conceded requests", f"{b1:.1f}%",
                  f"up from {b0:.1f}%<br>share of all generated tokens"
                  if b1 >= b0 else f"down from {b0:.1f}%<br>share of all generated tokens"))
 
@@ -446,6 +499,22 @@ def render(rows, fx, weeks, V, tot, base, cur, blind, stale_eps):
         for c, t, b in V)
 
     sig_n = sum(1 for r in fx if r[5])
+    # Multiplicity, disclosed rather than hidden: raw p-values on this many
+    # measures overstate certainty, so say which rows survive Bonferroni.
+    prim = "Requests ending in a concession"
+    alpha = 0.05 / len(fx) if fx else 0.05
+    surv = [r[0] for r in fx if r[4] < alpha]
+    fx_caption = (f"{sig_n} of {len(fx)} measures moved at uncorrected "
+                  f"p &lt; 0.05. Testing {len(fx)} things at once overstates "
+                  f"certainty, so: {len(surv) or 'none'} "
+                  f"({esc(', '.join(surv)) if surv else '&mdash;'}) also survive "
+                  f"a Bonferroni correction at p &lt; {alpha:.4f}.")
+    if prim in surv:
+        fx_caption += (" The concession rate was the pre-specified primary "
+                       "hypothesis and survives it.")
+    elif any(r[0] == prim for r in fx):
+        fx_caption += (" The pre-specified primary hypothesis, the concession "
+                       "rate, does not survive it.")
     legend_models = sorted({w[4] for w in weeks if w[4] != "mixed"})
     legend = "\n".join(
         f'        <span><i class="swatch" style="background:var(--{MODEL_COLOR.get(m, "rule-2")})"></i>{esc(m)}</span>'
@@ -463,7 +532,7 @@ def render(rows, fx, weeks, V, tot, base, cur, blind, stale_eps):
         base=esc(bshort), cur=esc(cshort),
         episodes=f"{tot['episodes']:,}", first=esc(tot["first"]), last=esc(tot["last"]),
         models=esc(", ".join(m.replace("claude-", "") for m in tot["models"])),
-        sig_n=sig_n, fx_n=len(fx),
+        sig_n=sig_n, fx_n=len(fx), fx_caption=fx_caption,
         blind_n=blind["labelled"] if blind else 0,
         small_n=SMALL_N,
         generated=datetime.date.today().isoformat(),
@@ -487,8 +556,9 @@ TEMPLATE = """<title>Is Claude Getting Worse? A Measurement</title>
     <p class="eyebrow">Empirical audit &middot; Claude Code transcripts</p>
     <h1>Is Claude getting worse?</h1>
     <p class="standfirst">
-      I measured it against my own logs instead of arguing about it. Every
-      figure on this page is regenerated from the transcripts; none is typed in
+      I measured it against my own logs instead of arguing about it. Some
+      things moved, one didn't, one cannot be measured at all &mdash; and every
+      figure on this page is regenerated from the transcripts, none typed in
       by hand.
     </p>
     <p class="byline">
@@ -518,11 +588,15 @@ TEMPLATE = """<title>Is Claude Getting Worse? A Measurement</title>
       behind the model's own verbosity.
     </p>
     <p>
-      The core proxy for &ldquo;it made a mistake&rdquo; is <strong>an admission
-      that credits the human</strong> &mdash; Claude saying &ldquo;you're
-      right&rdquo; or &ldquo;good catch&rdquo;. It cannot say that unless it was
-      just contradicted, so admissions track caught errors rather than
-      spontaneous self-doubt.
+      The unit is <strong>a request that ends with Claude conceding it was
+      wrong</strong>. Concessions overwhelmingly credit the human &mdash;
+      phrasing Claude cannot use unless it was just contradicted &mdash; so
+      they track errors the human caught rather than spontaneous self-doubt.
+      What a rising concession rate cannot do by itself is name the cause:
+      more errors, a readier concession reflex, better error-recognition, and
+      a harder mix of work all move it the same way. The blind labelling in
+      &sect;4 checks the first of those; the limitations in &sect;5 are the
+      honest budget for the rest.
     </p>
   </section>
 
@@ -546,8 +620,7 @@ TEMPLATE = """<title>Is Claude Getting Worse? A Measurement</title>
         </div>
       </details>
       <figcaption>
-        {sig_n} of {fx_n} measures moved significantly. Direction is what
-        matters here: read the colour, then the p-value, then the sample size.
+        {fx_caption}
       </figcaption>
     </figure>
   </section>
@@ -704,7 +777,7 @@ def main():
     blind = blind_result(base, cur, chosen)
     fx = build_fx(rows, eps, base, cur, blind)
     weeks = build_weeks(rows)
-    V = verdicts(fx, blind, base, cur, rows)
+    V = verdicts(fx, blind, base, cur, rows, eps)
 
     models = sorted({r["model"] for r in rows if r["model"] != "unknown"})
     # True when history covers weeks the rolling transcript window no longer

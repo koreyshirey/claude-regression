@@ -4,12 +4,18 @@
     "claude-opus-5": {
       "n": 50,
       "friction": 16,
-      "restate": 4
+      "C": 8,
+      "D": 9,
+      "restate": 4,
+      "B": 4
     },
     "claude-opus-4-8": {
       "n": 50,
       "friction": 6,
-      "restate": 3
+      "D": 3,
+      "restate": 3,
+      "B": 3,
+      "C": 3
     }
   },
   "labelled": 100,

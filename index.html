@@ -244,8 +244,9 @@
     <p class="eyebrow">Empirical audit &middot; Claude Code transcripts</p>
     <h1>Is Claude getting worse?</h1>
     <p class="standfirst">
-      I measured it against my own logs instead of arguing about it. Every
-      figure on this page is regenerated from the transcripts; none is typed in
+      I measured it against my own logs instead of arguing about it. Some
+      things moved, one didn't, one cannot be measured at all &mdash; and every
+      figure on this page is regenerated from the transcripts, none typed in
       by hand.
     </p>
     <p class="byline">
@@ -257,7 +258,7 @@
   <div class="stats">
     <div class="stat"><p class="k">Requests ending in a concession</p><p class="v">1.97&times;</p><p class="sub">12.3% &rarr; 24.2% per request<br>Fisher exact p = 0.00019</p></div>
     <div class="stat"><p class="k">Blind-labelled friction</p><p class="v">2.67&times;</p><p class="sub">12% &rarr; 32% per request<br>Fisher exact p = 0.028</p></div>
-    <div class="stat"><p class="k">Output tokens spent being wrong</p><p class="v">26.9%</p><p class="sub">up from 19.5%<br>share of all generated tokens</p></div>
+    <div class="stat"><p class="k">Output tokens in conceded requests</p><p class="v">26.9%</p><p class="sub">up from 19.5%<br>share of all generated tokens</p></div>
   </div>
 
   <section>
@@ -277,11 +278,15 @@
       behind the model's own verbosity.
     </p>
     <p>
-      The core proxy for &ldquo;it made a mistake&rdquo; is <strong>an admission
-      that credits the human</strong> &mdash; Claude saying &ldquo;you're
-      right&rdquo; or &ldquo;good catch&rdquo;. It cannot say that unless it was
-      just contradicted, so admissions track caught errors rather than
-      spontaneous self-doubt.
+      The unit is <strong>a request that ends with Claude conceding it was
+      wrong</strong>. Concessions overwhelmingly credit the human &mdash;
+      phrasing Claude cannot use unless it was just contradicted &mdash; so
+      they track errors the human caught rather than spontaneous self-doubt.
+      What a rising concession rate cannot do by itself is name the cause:
+      more errors, a readier concession reflex, better error-recognition, and
+      a harder mix of work all move it the same way. The blind labelling in
+      &sect;4 checks the first of those; the limitations in &sect;5 are the
+      honest budget for the rest.
     </p>
   </section>
 
@@ -305,8 +310,7 @@
         </div>
       </details>
       <figcaption>
-        5 of 7 measures moved significantly. Direction is what
-        matters here: read the colour, then the p-value, then the sample size.
+        5 of 7 measures moved at uncorrected p &lt; 0.05. Testing 7 things at once overstates certainty, so: 3 (Tool calls per request, Requests ending in a concession, Output tokens per request) also survive a Bonferroni correction at p &lt; 0.0071. The concession rate was the pre-specified primary hypothesis and survives it.
       </figcaption>
     </figure>
   </section>
@@ -343,8 +347,8 @@
 
   <section>
     <h2>Verdicts <span class="n">&sect;4</span></h2>
-    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>Mistakes I have to catch roughly doubled</h3></div><p>Automated admission-counting gives <strong>&times;1.97</strong> (p = 0.00019), taking the share of requests that end with Claude conceding from <strong>12.3%</strong> to <strong>24.2%</strong>. Hand-labelling 100 randomly sampled exchanges &mdash; with the model identity withheld from the labeller until every label was fixed &mdash; gives <strong>&times;2.67</strong> (p = 0.028). Two methods that share no assumptions agree.</p></div>
-    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>It costs more, and I supply more of the context</h3></div><p>Median output tokens per request rose <strong>87%</strong> (p = <0.0001) and tool calls per request rose <strong>120%</strong> (p = <0.0001). The share of all generated tokens spent inside requests that end in a concession went from <strong>19.5% to 26.9%</strong>.</p><p>Meanwhile the characters <em>I</em> type per request rose <strong>31%</strong> (p = 0.039). Front-loading more context is not preventing the friction; both moved together.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>Requests ending in a concession roughly doubled</h3></div><p>Automated counting gives <strong>&times;1.97</strong> (p = 0.00019), taking the share of requests that end with Claude conceding from <strong>12.3%</strong> to <strong>24.2%</strong>. Blind hand-labelling of 100 sampled exchanges &mdash; model identity withheld until every label was fixed &mdash; agrees: <strong>&times;2.67</strong> (p = 0.028).</p><p>A concession is an admission, not a verified error. More actual mistakes move this number &mdash; but so would a model that concedes more readily, one that recognises its own errors better, or a harder mix of work arriving in the same weeks. The strictest blind label &mdash; a caught, corrected error &mdash; went 3&rarr;8 of 50: same direction, but a sample too small to stand alone (p = 0.20).</p><p>Out-of-sample: restricted to opus-5 requests from weeks beginning 2026-08-10 or later &mdash; data that did not exist when this analysis was first run &mdash; the rate is <strong>22.4%</strong> (n = 107) against the same baseline, p = 0.017. The effect is not an artifact of the window that produced it.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>It costs more, and I supply more of the context</h3></div><p>Median output tokens per request rose <strong>87%</strong> (p = <0.0001) and tool calls per request rose <strong>120%</strong> (p = <0.0001). The share of all generated tokens spent inside requests that end in a concession went from <strong>19.5% to 26.9%</strong>. Rising tool calls and tokens are as consistent with a deliberately more thorough agentic style as with churn &mdash; the churn proxies in the final verdict do not separate the two &mdash; but the cost per request is real either way.</p><p>Meanwhile the characters <em>I</em> type per request rose <strong>31%</strong> (p = 0.039). Front-loading more context is not preventing the friction; both moved together.</p></div>
     <div class="verdict"><div class="vhead"><span class="chip nul">Not supported</span><h3>I am not repeating myself more</h3></div><p>Hand-labelled restatement went from <strong>6% to 8%</strong> of requests &mdash; <strong>p = 1.00</strong>.</p><p>One real blind spot: the labeller saw only two prior turns within a single session, so re-teaching the same lesson in a <em>new</em> session is invisible to this method. That is a different measurement, and it has not been built yet.</p></div>
     <div class="verdict"><div class="vhead"><span class="chip unk">Unmeasurable</span><h3>Reasoning quality cannot be assessed at all</h3></div><p>Thinking content is stored as an empty string plus an encrypted signature for every model except sonnet-4-6. There is no reasoning text to measure. Any claim that &ldquo;thinking got shorter&rdquo; would be an artifact of a storage policy change, not a finding.</p><p>Behavioural proxies for flailing: self-reversals 3&rarr;5 per 100 requests, p = 0.22; failed edits 4&rarr;6 per 100 requests, p = 0.35; duplicate commands 4&rarr;5 per 100 requests, p = 1.00; repeated file reads 37&rarr;14 per 100 requests, p = <0.0001. More tokens and more tool calls per request are equally consistent with thoroughness and with churn; nothing here separates them.</p></div>
   </section>
