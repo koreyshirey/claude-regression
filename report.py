@@ -324,6 +324,37 @@ def esc(s):
     return html.escape(str(s), quote=False)
 
 
+def decomposition_para(eps, base, cur):
+    """Is the rise the human objecting more, the model folding to objections
+    more readily, or the model flagging its own errors? The pieces move
+    differently, and the first is directly checkable: 'the metric just counts
+    my complaints' predicts a rising pushback rate."""
+    B = [e for e in eps if e["model"] == base]
+    C = [e for e in eps if e["model"] == cur]
+    if len(B) < 50 or len(C) < 50:
+        return ""
+
+    def pair(pred):
+        b = sum(1 for e in B if pred(e))
+        c = sum(1 for e in C if pred(e))
+        p = fisher(b, len(B) - b, c, len(C) - c)
+        return 100 * b / len(B), 100 * c / len(C), p
+
+    pb, pc, p_push = pair(lambda e: e["pushed"])
+    cb, cc, p_cred = pair(lambda e: e["admitted"] and e.get("credited"))
+    sb, sc, p_self = pair(lambda e: e["admitted"] and not e.get("credited"))
+    return (f"<p>Decomposed: my explicit pushback rate did not move "
+            f"({pb:.1f}% &rarr; {pc:.1f}% of requests, p = {pfmt(p_push)}), so "
+            f"&ldquo;the human simply objected more&rdquo; is not what the data "
+            f"shows. Concessions that credit me rose from {cb:.1f}% to {cc:.1f}% "
+            f"(p = {pfmt(p_cred)}); admissions that credit no one &mdash; Claude "
+            f"flagging its own error unprompted &mdash; rose from {sb:.1f}% to "
+            f"{sc:.1f}% (p = {pfmt(p_self)}) and are the largest mover. Whether "
+            f"those self-flagged corrections are real errors caught mid-task or "
+            f"a more self-correcting narration style, the transcripts cannot "
+            f"say.</p>")
+
+
 def holdout_para(eps, base, cur):
     """The strongest guard the data allows: the concession comparison rerun on
     episodes from weeks that postdate the original analysis entirely."""
@@ -388,6 +419,7 @@ def verdicts(fx, blind, base, cur, rows, eps):
                          f"&mdash; went {cb}&rarr;{cc} of {nb}: same direction, but a "
                          f"sample too small to stand alone (p = {pfmt(p)}).")
         body += "</p>"
+        body += decomposition_para(eps, base, cur)
         body += holdout_para(eps, base, cur)
         V.append((cls, title, body))
 
@@ -589,9 +621,10 @@ TEMPLATE = """<title>Is Claude Getting Worse? A Measurement</title>
     </p>
     <p>
       The unit is <strong>a request that ends with Claude conceding it was
-      wrong</strong>. Concessions overwhelmingly credit the human &mdash;
-      phrasing Claude cannot use unless it was just contradicted &mdash; so
-      they track errors the human caught rather than spontaneous self-doubt.
+      wrong</strong>. Most concessions credit the human &mdash; phrasing Claude
+      cannot use unless it was just contradicted &mdash; so they largely track
+      errors the human caught; the remainder are Claude flagging its own error
+      unprompted, and the verdicts split the two.
       What a rising concession rate cannot do by itself is name the cause:
       more errors, a readier concession reflex, better error-recognition, and
       a harder mix of work all move it the same way. The blind labelling in
