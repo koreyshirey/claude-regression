@@ -12,3 +12,10 @@ episodes.json
 
 # Derived aggregates are safe to commit -- they are counts, not content.
 !metrics_history.jsonl
+
+# Per-machine source id -- if this shipped, every cloner would inherit the
+# author's id and their rows would overwrite each other again.
+.source
+
+# Escalation drafts / working notes, not part of the tool.
+escalation/

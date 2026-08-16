@@ -21,6 +21,14 @@ work got harder." If you run this against your own logs, the file worth sharing
 back is `metrics_history.jsonl` — counts only, no message content. Open an issue
 with it attached.
 
+Every row carries a `source` tag — a random 8-character id generated on first
+run and kept in a gitignored `.source` file (set `CLAUDE_REGRESSION_SOURCE` or
+edit `.source` for a readable handle). The id carries no information about you
+or your machine. It exists so that files holding more than one person's rows
+can never silently overwrite each other, and so the report never blends two
+people's data into one fake user: `report.py` always reports exactly one
+source (`--source` picks which).
+
 **Check it before you send it.** Never share `archive/`, `metrics.json`,
 `blind_sample.txt`, or `sample_key.json`; all four are gitignored because they
 contain raw transcript text, which holds plaintext secrets.
@@ -101,3 +109,7 @@ grading in favour of a conclusion you already hold.
   opus-4-8 dominates July, opus-5 dominates August.
 - **Task mix shifts.** Harder debugging sessions produce more errors
   regardless of model.
+- **The tracker measures its own maintenance sessions.** Sessions spent
+  building or discussing this tool are themselves transcripts, and
+  conversations *about* concession patterns are unusually likely to trip the
+  detectors. A handful of episodes, but they land in the newest weeks.

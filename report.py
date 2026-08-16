@@ -29,6 +29,7 @@ import json, os, sys, math, html, argparse, datetime, statistics, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HISTORY = os.path.join(HERE, "metrics_history.jsonl")
+SOURCEFILE = os.path.join(HERE, ".source")
 EPISODES = os.path.join(HERE, "episodes.json")
 LABELS = os.path.join(HERE, "labels.json")
 KEY = os.path.join(HERE, "sample_key.json")
@@ -108,6 +109,34 @@ def load_history():
     return [json.loads(l) for l in open(HISTORY) if l.strip()]
 
 
+def pick_source(rows, want=None):
+    """One report = one person's data, always.
+
+    History rows carry a `source` tag (see snapshot.py) because contributed
+    files can hold several people's weeks. Blending them would average two
+    humans' task mixes into one fake user, so: this machine's source if it has
+    rows, else the largest single source, never a mixture. Episode-based
+    medians stay consistent automatically -- episodes.json is gitignored, so
+    it only ever describes the local machine.
+    """
+    by = collections.Counter()
+    for r in rows:
+        by[r.get("source", "")] += r["episodes"]
+    if want:
+        if want not in by:
+            sys.exit(f"no rows from source '{want}'; have: {', '.join(sorted(by))}")
+        chosen = want
+    else:
+        local = os.environ.get("CLAUDE_REGRESSION_SOURCE")
+        if not local and os.path.exists(SOURCEFILE):
+            local = open(SOURCEFILE).read().strip()
+        chosen = local if local in by else by.most_common(1)[0][0]
+    if len(by) > 1:
+        print(f"history holds {len(by)} sources; reporting only "
+              f"'{chosen}' ({by[chosen]} episodes)")
+    return [r for r in rows if r.get("source", "") == chosen], chosen
+
+
 def load_episodes():
     if not os.path.exists(EPISODES):
         return []
@@ -147,9 +176,15 @@ def pick_models(rows, args):
     return base, cur
 
 
-def blind_result(base, cur):
+def blind_result(base, cur, chosen):
     """Join hand labels to the withheld key. Cache counts so the report still
-    builds from a fresh clone, where sample_key.json is gitignored."""
+    builds from a fresh clone, where sample_key.json is gitignored.
+
+    The cache carries a `source`: the labelling belongs to whoever held the
+    key. A cloner reporting their own rates must not inherit someone else's
+    hand-labelled rows, so a source mismatch returns None. Regeneration only
+    happens where the key exists, i.e. on the labeller's machine, so stamping
+    with the locally chosen source is correct there."""
     if os.path.exists(LABELS) and os.path.exists(KEY):
         labels, key = json.load(open(LABELS)), json.load(open(KEY))
         agg = collections.defaultdict(lambda: collections.Counter())
@@ -163,7 +198,8 @@ def blind_result(base, cur):
                 a["friction"] += 1
             if "B" in lab:
                 a["restate"] += 1
-        res = {"models": {m: dict(c) for m, c in agg.items()},
+        res = {"source": chosen,
+               "models": {m: dict(c) for m, c in agg.items()},
                "labelled": len(labels),
                "sampled_at": datetime.date.today().isoformat()}
         if os.path.exists(BLIND):                 # keep the original date
@@ -176,6 +212,8 @@ def blind_result(base, cur):
     elif os.path.exists(BLIND):
         res = json.load(open(BLIND))
     else:
+        return None
+    if res.get("source") != chosen:
         return None
     m = res.get("models", {})
     if base not in m or cur not in m:
@@ -655,14 +693,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline")
     ap.add_argument("--current")
+    ap.add_argument("--source", help="report a specific contributor's rows")
     ap.add_argument("--check", action="store_true",
                     help="exit 1 if index.html differs from what the data says")
     args = ap.parse_args()
 
-    rows = load_history()
+    rows, chosen = pick_source(load_history(), args.source)
     eps = load_episodes()
     base, cur = pick_models(rows, args)
-    blind = blind_result(base, cur)
+    blind = blind_result(base, cur, chosen)
     fx = build_fx(rows, eps, base, cur, blind)
     weeks = build_weeks(rows)
     V = verdicts(fx, blind, base, cur, rows)

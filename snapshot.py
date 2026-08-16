@@ -18,6 +18,35 @@ SRC = os.path.expanduser("~/.claude/projects")
 ARCHIVE = os.path.join(HERE, "archive")
 HISTORY = os.path.join(HERE, "metrics_history.jsonl")
 MANIFEST = os.path.join(ARCHIVE, "manifest.json")
+SOURCEFILE = os.path.join(HERE, ".source")
+
+
+def source_id():
+    """Stable id for whose machine these counts came from.
+
+    This repo ships its author's metrics_history.jsonl and invites others to
+    send theirs back, so rows from two people can end up in one file. Without
+    a source tag the (week, model) upsert silently REPLACES one user's week
+    with another's -- a 9-episode week overwriting a 140-episode one, with
+    nothing in the output to say it happened.
+
+    Generated once and persisted to .source (gitignored). Not derived from the
+    hostname: macOS hostnames change with the network, which would split one
+    machine's history into phantom sources; and default hostnames collide
+    across users. A random id carries no identity at all. Set the env var or
+    edit .source if you want a readable handle instead.
+    """
+    v = os.environ.get("CLAUDE_REGRESSION_SOURCE")
+    if v:
+        return v
+    if os.path.exists(SOURCEFILE):
+        v = open(SOURCEFILE).read().strip()
+        if v:
+            return v
+    v = hashlib.sha256(os.urandom(16)).hexdigest()[:8]
+    with open(SOURCEFILE, "w") as fh:
+        fh.write(v + "\n")
+    return v
 
 # Metrics we track over time. Keep this list append-only so old rows stay
 # comparable to new ones.
@@ -26,10 +55,12 @@ def aggregate(episodes):
     for e in episodes:
         buckets[(e["week"], e["model"])].append(e)
     rows = []
+    src = source_id()
     for (week, model), E in sorted(buckets.items()):
         n = len(E)
         med = lambda f: sorted(f(x) for x in E)[n // 2]
         rows.append({
+            "source": src,
             "week": week,
             "model": model,
             "episodes": n,
@@ -92,18 +123,42 @@ def upsert(rows):
             line = line.strip()
             if line:
                 old.append(json.loads(line))
-    fresh = {(r["week"], r["model"]) for r in rows}
-    kept = [r for r in old if (r["week"], r["model"]) not in fresh]
+    # Untagged rows predate the source field and can only be this machine's --
+    # a clone always arrives with the author's rows already tagged.
+    src = source_id()
+    for r in old:
+        r.setdefault("source", src)
+    key = lambda r: (r.get("source"), r["week"], r["model"])
+    fresh = {key(r) for r in rows}
+    kept = [r for r in old if key(r) not in fresh]
     stamp = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     for r in rows:
         r["snapshot_at"] = stamp
-    allrows = sorted(kept + rows, key=lambda r: (r["week"], r["model"]))
+    allrows = sorted(kept + rows, key=lambda r: (r.get("source", ""), r["week"], r["model"]))
     with open(HISTORY, "w") as fh:
         for r in allrows:
             fh.write(json.dumps(r) + "\n")
+    others = {r.get("source") for r in kept} - {src}
     print(f"history: {len(rows)} week/model rows refreshed, "
-          f"{len(kept)} preserved from archived-away data, {len(allrows)} total")
+          f"{len(kept)} preserved from archived-away data, {len(allrows)} total"
+          + (f"; {len(others)} other source(s) left untouched: "
+             f"{', '.join(sorted(others))}" if others else ""))
     return allrows
+
+
+def one_source(rows):
+    """Never mix contributors in one table. Prefer this machine's rows; with a
+    single foreign source (a fresh clone of someone else's data) show that."""
+    src = source_id()
+    mine = [r for r in rows if r.get("source", src) == src]
+    if mine:
+        return mine, src
+    seen = sorted({r.get("source") for r in rows})
+    if len(seen) == 1:
+        return rows, seen[0]
+    print(f"history holds {len(seen)} sources ({', '.join(seen)}); "
+          f"showing {seen[0]}. Run snapshot.py to add your own.")
+    return [r for r in rows if r.get("source") == seen[0]], seen[0]
 
 
 def trend(rows, weeks=10):
@@ -133,7 +188,7 @@ def trend(rows, weeks=10):
 def main():
     if "--trend" in sys.argv:
         rows = [json.loads(l) for l in open(HISTORY) if l.strip()]
-        trend(rows)
+        trend(one_source(rows)[0])
         return
     archive_raw()
     r = subprocess.run([sys.executable, os.path.join(HERE, "analyze3.py")],
@@ -143,7 +198,7 @@ def main():
         sys.exit(1)
     episodes = json.load(open(os.path.join(HERE, "episodes.json")))
     rows = upsert(aggregate(episodes))
-    trend(rows)
+    trend(one_source(rows)[0])
     # Rebuild index.html from the history we just wrote. The report used to be
     # hand-maintained, which meant it drifted silently every time this ran.
     r = subprocess.run([sys.executable, os.path.join(HERE, "report.py")],
