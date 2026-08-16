@@ -1,0 +1,16 @@
+{
+  "models": {
+    "claude-opus-5": {
+      "n": 50,
+      "friction": 16,
+      "restate": 4
+    },
+    "claude-opus-4-8": {
+      "n": 50,
+      "friction": 6,
+      "restate": 3
+    }
+  },
+  "labelled": 100,
+  "sampled_at": "2026-08-16"
+}

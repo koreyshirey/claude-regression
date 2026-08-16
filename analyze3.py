@@ -41,14 +41,14 @@ def toklen(s):
 class Ep:
     """One request episode."""
     __slots__ = ("model", "week", "human_chars", "out_tok", "think_chars",
-                 "tools", "admitted", "pushed", "reversals", "edit_fail",
-                 "dup_cmd", "reread", "is_first")
+                 "tools", "admitted", "credited", "pushed", "reversals",
+                 "edit_fail", "dup_cmd", "reread", "is_first")
 
     def __init__(self, model, week):
         self.model, self.week = model, week
         self.human_chars = self.out_tok = self.think_chars = self.tools = 0
         self.reversals = self.edit_fail = self.dup_cmd = self.reread = 0
-        self.admitted = self.pushed = self.is_first = False
+        self.admitted = self.credited = self.pushed = self.is_first = False
 
 
 episodes = []
@@ -123,6 +123,11 @@ for path in sorted(glob.glob(os.path.join(ROOT, "**", "*.jsonl"), recursive=True
                     txt = b.get("text", "") or ""
                     if ADMIT.search(txt):
                         ep.admitted = True
+                    # An admission that credits the human is the stronger
+                    # signal: Claude cannot say "you're right" unless it was
+                    # just contradicted. USER_CREDIT comes from analyze2.py.
+                    if USER_CREDIT.search(txt):
+                        ep.credited = True
                     ep.reversals += len(REVERSAL.findall(txt))
                 elif b.get("type") == "tool_use":
                     ep.tools += 1

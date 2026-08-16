@@ -35,12 +35,15 @@ def aggregate(episodes):
             "episodes": n,
             "sessions_first_turns": sum(1 for e in E if e["is_first"]),
             "conceded_pct": round(100 * sum(1 for e in E if e["admitted"]) / n, 2),
+            "credited_pct": round(100 * sum(1 for e in E if e.get("credited")) / n, 2),
             "pushback_pct": round(100 * sum(1 for e in E if e["pushed"]) / n, 2),
             "out_tok_median": med(lambda e: e["out_tok"]),
             "out_tok_total": sum(e["out_tok"] for e in E),
             "out_tok_in_concessions": sum(e["out_tok"] for e in E if e["admitted"]),
             "human_chars_median": med(lambda e: e["human_chars"]),
+            "human_chars_total": sum(e["human_chars"] for e in E),
             "tools_median": med(lambda e: e["tools"]),
+            "tools_total": sum(e["tools"] for e in E),
             "reversals_total": sum(e["reversals"] for e in E),
             "edit_fail_total": sum(e["edit_fail"] for e in E),
             "dup_cmd_total": sum(e["dup_cmd"] for e in E),
@@ -141,6 +144,12 @@ def main():
     episodes = json.load(open(os.path.join(HERE, "episodes.json")))
     rows = upsert(aggregate(episodes))
     trend(rows)
+    # Rebuild index.html from the history we just wrote. The report used to be
+    # hand-maintained, which meant it drifted silently every time this ran.
+    r = subprocess.run([sys.executable, os.path.join(HERE, "report.py")],
+                       capture_output=True, text=True)
+    print("\n" + (r.stdout.strip() if r.returncode == 0
+                  else "report.py failed:\n" + r.stderr[-2000:]))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 <title>Is Claude Getting Worse? A Measurement</title>
 
 <style>
-  .rp {
+.rp {
     --ground:  #f4f5f7;
     --surface: #ffffff;
     --sunk:    #eceef2;
@@ -13,6 +13,7 @@
     --s1:      #2a78d6;
     --s2:      #eb6834;
     --s3:      #1baf7a;
+    --s4:      #8a5cd6;
     --caveat:  #7d5c0e;
     --caveat-bg:#f7f1de;
     --shadow:  0 1px 2px rgba(18,22,28,.05);
@@ -34,6 +35,7 @@
       --s1:      #3987e5;
       --s2:      #d95926;
       --s3:      #199e70;
+      --s4:      #9a6ee8;
       --caveat:  #d6ac57;
       --caveat-bg:#241f13;
       --shadow:  0 1px 2px rgba(0,0,0,.3);
@@ -52,6 +54,7 @@
     --s1:      #3987e5;
     --s2:      #d95926;
     --s3:      #199e70;
+    --s4:      #9a6ee8;
     --caveat:  #d6ac57;
     --caveat-bg:#241f13;
     --shadow:  0 1px 2px rgba(0,0,0,.3);
@@ -101,7 +104,14 @@
     gap: 1px; background: var(--rule); border: 1px solid var(--rule);
     margin: 40px 0 56px;
   }
-  .rp .stat { background: var(--surface); padding: 22px 20px 20px; }
+  /* column so a two-line label does not push its number out of line with the
+     neighbouring cards -- .v is pinned to the same baseline across the row */
+  .rp .stat {
+    background: var(--surface); padding: 22px 20px 20px;
+    display: flex; flex-direction: column;
+  }
+  .rp .stat .k { min-height: 2.4em; }
+  .rp .stat .sub { margin-top: auto; }
   .rp .stat .k {
     font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted); margin: 0 0 12px;
@@ -224,74 +234,62 @@
     .rp { font-size: 16px; }
     .rp .stat .v { font-size: 32px; }
   }
+
 </style>
 
 <div class="rp">
 <div class="wrap">
 
   <header class="head">
-    <p class="eyebrow">Empirical audit · Claude Code transcripts</p>
+    <p class="eyebrow">Empirical audit &middot; Claude Code transcripts</p>
     <h1>Is Claude getting worse?</h1>
     <p class="standfirst">
-      I measured it against my own logs instead of arguing about it. Two claims
-      held up under blind labelling. One did not. One turned out to be
-      permanently unmeasurable.
+      I measured it against my own logs instead of arguing about it. Every
+      figure on this page is regenerated from the transcripts; none is typed in
+      by hand.
     </p>
     <p class="byline">
-      <span>73 sessions</span><span>2026-06-03 → 2026-08-08</span>
-      <span>705 requests</span><span>12,919 assistant messages</span>
+      <span>853 requests</span><span>2026-06-01 &rarr; 2026-08-10</span>
+      <span>opus-4-8 vs opus-5</span><span>generated 2026-08-16</span>
     </p>
   </header>
 
   <div class="stats">
-    <div class="stat">
-      <p class="k">Requests ending in a concession</p>
-      <p class="v">2.09&times;</p>
-      <p class="sub">15.8% → 32.9% per request<br>Fisher exact p = 0.000075</p>
-    </div>
-    <div class="stat">
-      <p class="k">Blind-labelled friction</p>
-      <p class="v">2.67&times;</p>
-      <p class="sub">12% → 32% of requests<br>Fisher exact p = 0.007</p>
-    </div>
-    <div class="stat">
-      <p class="k">Output tokens spent being wrong</p>
-      <p class="v">30.9%</p>
-      <p class="sub">up from 19.5%<br>share of all generated tokens</p>
-    </div>
+    <div class="stat"><p class="k">Requests ending in a concession</p><p class="v">1.97&times;</p><p class="sub">12.3% &rarr; 24.2% per request<br>Fisher exact p = 0.00025</p></div>
+    <div class="stat"><p class="k">Blind-labelled friction</p><p class="v">2.67&times;</p><p class="sub">12% &rarr; 32% per request<br>Fisher exact p = 0.028</p></div>
+    <div class="stat"><p class="k">Output tokens spent being wrong</p><p class="v">27.1%</p><p class="sub">up from 19.5%<br>share of all generated tokens</p></div>
   </div>
 
   <section>
-    <h2>What this measures <span class="n">§1</span></h2>
+    <h2>What this measures <span class="n">&sect;1</span></h2>
     <p>
       Claude Code writes every session to disk as JSONL, timestamped, with the
       model recorded per message. That makes a personal, longitudinal dataset:
-      not benchmark scores, but what actually happened across two months of real
-      work — homelab automation, PCB design, firmware bring-up, media
+      not benchmark scores, but what actually happened across months of real
+      work &mdash; homelab automation, PCB design, firmware bring-up, media
       infrastructure.
     </p>
     <p>
-      The comparison is <strong>claude-opus-4-8</strong> (dominant through July)
-      against <strong>claude-opus-5</strong> (dominant in August). Everything is
-      normalised <strong>per request</strong> — one thing I asked for — rather
-      than per message, because opus-5 emits 31.4 assistant messages per request
-      against opus-4-8's 25.7. Dividing by messages hides the effect behind the
-      model's own verbosity.
+      The comparison is <strong>opus-4-8</strong> against <strong>opus-5</strong>.
+      Everything is normalised <strong>per request</strong> &mdash; one thing I
+      asked for &mdash; rather than per message, because a chattier model emits
+      more messages for the same work. Dividing by messages hides the effect
+      behind the model's own verbosity.
     </p>
     <p>
-      The core proxy for "it made a mistake" is <strong>an admission that credits
-      the human</strong> — Claude saying "you're right" or "good catch". It
-      cannot say that unless it was just contradicted. Across every model,
-      62–70% of all admissions are of this kind, so admissions track
-      caught errors rather than spontaneous self-doubt.
+      The core proxy for &ldquo;it made a mistake&rdquo; is <strong>an admission
+      that credits the human</strong> &mdash; Claude saying &ldquo;you're
+      right&rdquo; or &ldquo;good catch&rdquo;. It cannot say that unless it was
+      just contradicted, so admissions track caught errors rather than
+      spontaneous self-doubt.
     </p>
   </section>
 
   <section>
-    <h2>Effect sizes <span class="n">§2</span></h2>
+    <h2>Effect sizes <span class="n">&sect;2</span></h2>
     <figure>
       <p class="figtitle">Change from opus-4-8 to opus-5, per request</p>
-      <p class="figsub">multiplier · baseline 1.0 = no change</p>
+      <p class="figsub">multiplier &middot; baseline 1.0 = no change</p>
       <div id="fx"></div>
       <div class="legend">
         <span><i class="swatch" style="background:var(--s1)"></i>statistically significant (p &lt; 0.05)</span>
@@ -301,29 +299,29 @@
         <summary>Show as table</summary>
         <div class="scroll">
           <table>
-            <thead><tr><th>Measure</th><th class="num">opus-4-8</th><th class="num">opus-5</th><th class="num">×</th><th class="num">p</th></tr></thead>
+            <thead><tr><th>Measure</th><th class="num">opus-4-8</th><th class="num">opus-5</th><th class="num">&times;</th><th class="num">p</th></tr></thead>
             <tbody id="fxtable"></tbody>
           </table>
         </div>
       </details>
       <figcaption>
-        Six measures moved significantly; every one of them in the direction of
-        more friction. The seventh — me restating something I'd already said —
-        did not move at all.
+        5 of 7 measures moved significantly. Direction is what
+        matters here: read the colour, then the p-value, then the sample size.
       </figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>Over time <span class="n">§3</span></h2>
+    <h2>Over time <span class="n">&sect;3</span></h2>
     <figure>
       <p class="figtitle">Share of requests that ended with Claude admitting it was wrong</p>
-      <p class="figsub">by week · bar colour = dominant model that week</p>
+      <p class="figsub">by week &middot; bar colour = dominant model that week</p>
+      
       <div id="wk"></div>
       <div class="legend">
-        <span><i class="swatch" style="background:var(--s3)"></i>sonnet-4-6</span>
         <span><i class="swatch" style="background:var(--s1)"></i>opus-4-8</span>
         <span><i class="swatch" style="background:var(--s2)"></i>opus-5</span>
+        <span><i class="swatch" style="background:var(--s3)"></i>sonnet-4-6</span>
         <span><i class="swatch" style="background:var(--rule-2)"></i>mixed / low sample</span>
       </div>
       <details>
@@ -336,82 +334,26 @@
         </div>
       </details>
       <figcaption>
-        Faded bars are weeks with fewer than 20 requests — too small to read
-        anything into. Model regimes changed over this window, so this is not a
-        single continuous trend; it is three regimes side by side.
+        Faded bars are weeks with fewer than 20 requests &mdash; too small to
+        read anything into. Model regimes changed over this window, so this is
+        not a single continuous trend; it is several regimes side by side.
       </figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>Verdicts <span class="n">§4</span></h2>
-
-    <div class="verdict">
-      <div class="vhead"><span class="chip sup">Supported</span><h3>Mistakes I have to catch roughly doubled</h3></div>
-      <p>
-        Two methods that share no assumptions agree. Automated admission-counting
-        gives <strong>×2.09</strong> (p = 0.000075). Hand-labelling 100 randomly
-        sampled exchanges — with the model identity withheld from the labeller
-        until after every label was fixed — gives <strong>×2.67</strong>
-        (p = 0.007). Roughly one in three requests to opus-5 now involves
-        correcting, objecting, or restating.
-      </p>
-    </div>
-
-    <div class="verdict">
-      <div class="vhead"><span class="chip sup">Supported</span><h3>It costs more, and I supply more of the context</h3></div>
-      <p>
-        Median output tokens per request rose <strong>51%</strong> (p = 0.0012)
-        and tool calls per request rose <strong>80%</strong> (p = 0.0079). The
-        share of all generated tokens spent inside requests that end in a
-        concession went from <strong>19.5% to 30.9%</strong> — nearly a third of
-        output now goes to exchanges that end in "you're right."
-      </p>
-      <p>
-        Meanwhile the characters <em>I</em> type per request rose
-        <strong>67%</strong> (p &lt; 0.0001). Front-loading more context is not
-        preventing the friction; both went up together.
-      </p>
-    </div>
-
-    <div class="verdict">
-      <div class="vhead"><span class="chip nul">Not supported</span><h3>I am not repeating myself more</h3></div>
-      <p>
-        This was the claim I was most confident about, and the data does not back
-        it. Hand-labelled restatement went from <strong>6% to 8%</strong> of
-        requests — <strong>p = 1.0</strong>. Nothing there.
-      </p>
-      <p>
-        One real blind spot: the labeller saw only two prior turns within a
-        single session, so re-teaching the same lesson in a <em>new</em> session
-        is invisible to this method. That is a different measurement, and it has
-        not been built yet.
-      </p>
-    </div>
-
-    <div class="verdict">
-      <div class="vhead"><span class="chip unk">Unmeasurable</span><h3>Reasoning quality cannot be assessed at all</h3></div>
-      <p>
-        Thinking content is stored as an empty string plus an encrypted signature
-        for every model except sonnet-4-6. There is no reasoning text to measure.
-        Any claim that "thinking got shorter" would be an artifact of a storage
-        policy change, not a finding.
-      </p>
-      <p>
-        Behavioural proxies for flailing all came back null: self-reversals
-        p = 0.76, failed edits p = 0.97, duplicate commands p = 0.85, repeated
-        file reads p = 0.10 <em>and moving down</em>. More tokens and more tool
-        calls per request are equally consistent with thoroughness and with
-        churn; nothing here separates them.
-      </p>
-    </div>
+    <h2>Verdicts <span class="n">&sect;4</span></h2>
+    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>Mistakes I have to catch roughly doubled</h3></div><p>Automated admission-counting gives <strong>&times;1.97</strong> (p = 0.00025), taking the share of requests that end with Claude conceding from <strong>12.3%</strong> to <strong>24.2%</strong>. Hand-labelling 100 randomly sampled exchanges &mdash; with the model identity withheld from the labeller until every label was fixed &mdash; gives <strong>&times;2.67</strong> (p = 0.028). Two methods that share no assumptions agree.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>It costs more, and I supply more of the context</h3></div><p>Median output tokens per request rose <strong>89%</strong> (p = <0.0001) and tool calls per request rose <strong>120%</strong> (p = <0.0001). The share of all generated tokens spent inside requests that end in a concession went from <strong>19.5% to 27.1%</strong>.</p><p>Meanwhile the characters <em>I</em> type per request rose <strong>30%</strong> (p = 0.035). Front-loading more context is not preventing the friction; both moved together.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip nul">Not supported</span><h3>I am not repeating myself more</h3></div><p>Hand-labelled restatement went from <strong>6% to 8%</strong> of requests &mdash; <strong>p = 1.00</strong>.</p><p>One real blind spot: the labeller saw only two prior turns within a single session, so re-teaching the same lesson in a <em>new</em> session is invisible to this method. That is a different measurement, and it has not been built yet.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip unk">Unmeasurable</span><h3>Reasoning quality cannot be assessed at all</h3></div><p>Thinking content is stored as an empty string plus an encrypted signature for every model except sonnet-4-6. There is no reasoning text to measure. Any claim that &ldquo;thinking got shorter&rdquo; would be an artifact of a storage policy change, not a finding.</p><p>Behavioural proxies for flailing: self-reversals 3&rarr;5 per 100 requests, p = 0.30; failed edits 4&rarr;6 per 100 requests, p = 0.35; duplicate commands 4&rarr;5 per 100 requests, p = 1.00; repeated file reads 37&rarr;14 per 100 requests, p = <0.0001. More tokens and more tool calls per request are equally consistent with thoroughness and with churn; nothing here separates them.</p></div>
   </section>
 
   <section>
-    <h2>Method <span class="n">§5</span></h2>
+    <h2>Method <span class="n">&sect;5</span></h2>
     <p>
-      Everything is computed from local transcripts by a script that re-reads
-      them live; no numbers are hand-entered. Three guards matter:
+      Everything is computed from local transcripts by scripts that re-read them
+      live. Three guards matter:
     </p>
     <ul>
       <li>
@@ -432,12 +374,11 @@
     </ul>
 
     <div class="caveat">
-      <p class="lab">Limitations — read before citing this</p>
+      <p class="lab">Limitations &mdash; read before citing this</p>
       <p>
         <strong>Model and date are the same variable.</strong> Model assignment
-        was never randomised: opus-4-8 dominates July, opus-5 dominates August.
-        Anything that changed over calendar time is indistinguishable from
-        anything that changed with the model.
+        was never randomised, so anything that changed over calendar time is
+        indistinguishable from anything that changed with the model.
       </p>
       <p>
         <strong>Task mix shifted.</strong> The opus-5 sessions skew toward harder
@@ -453,33 +394,34 @@
         <strong>The headline metric measures admission, not error.</strong> A
         future model that concedes <em>less</em> readily without actually
         improving will look like progress on this chart. Periodic blind
-        labelling is the only thing that catches that.
+        labelling &mdash; last run on 100 exchanges &mdash; is the only
+        thing that catches that.
       </p>
     </div>
   </section>
 
   <section>
-    <h2>Run it on your own logs <span class="n">§6</span></h2>
+    <h2>Run it on your own logs <span class="n">&sect;6</span></h2>
     <p>
-      One machine's transcripts cannot separate "this model got worse" from "this
-      user's work got harder." More datasets can. The tooling is a few Python
-      files with no dependencies beyond the standard library, and
-      <strong>it never transmits anything</strong> — it reads
+      One machine's transcripts cannot separate &ldquo;this model got worse&rdquo;
+      from &ldquo;this user's work got harder.&rdquo; More datasets can. The
+      tooling is a few Python files with no dependencies beyond the standard
+      library, and <strong>it never transmits anything</strong> &mdash; it reads
       <code>~/.claude/projects</code> and writes locally.
     </p>
     <p>
-      <code>python3 snapshot.py</code> archives your transcripts and appends
-      weekly per-model metrics. It takes about two seconds and is safe to re-run.
-      What is worth sharing back is <code>metrics_history.jsonl</code>: counts
-      only, no message content.
+      <code>python3 snapshot.py</code> archives your transcripts, appends weekly
+      per-model metrics, and rebuilds this page. It takes about two seconds and
+      is safe to re-run. What is worth sharing back is
+      <code>metrics_history.jsonl</code>: counts only, no message content.
     </p>
     <div class="caveat">
       <p class="lab">Before you share anything</p>
       <p>
         Raw transcripts contain plaintext secrets. Mine held a wifi password,
-        personal email addresses, and vault variable names — none of which I put
-        there deliberately. The archive directory is gitignored for that reason.
-        Never push it, and check what you are sending before you send it.
+        personal email addresses, and vault variable names &mdash; none of which
+        I put there deliberately. The archive directory is gitignored for that
+        reason. Never push it, and check what you are sending before you send it.
       </p>
     </div>
     <p>
@@ -492,9 +434,9 @@
   </section>
 
   <p class="foot">
-    Generated from 73 local Claude Code sessions · 2026-06-03 to 2026-08-08 ·
-    all figures reproducible from the transcripts via <code>analyze3.py</code>
-    and <code>snapshot.py</code>
+    Generated 2026-08-16 from 853 requests &middot; 2026-06-01 to 2026-08-10
+    &middot; models: fable-5, opus-4-8, opus-5, sonnet-4-6, sonnet-5 &middot; rebuild with
+    <code>python3 report.py</code>
   </p>
 
 </div>
@@ -503,6 +445,11 @@
 <div class="tip" id="tip" role="status" aria-live="polite"></div>
 
 <script>
+var FX = [["Blind-labelled friction turns", "12%", "32%", 2.666666666666667, 0.028346708678756785, true], ["Tool calls per request", "5", "11", 2.2, 2.83639778331235e-11, true], ["Requests ending in a concession", "12.3%", "24.2%", 1.9722222222222223, 0.0002524252489879968, true], ["Output tokens per request", "16,641", "31,484", 1.891953608557178, 1.2654257641742106e-09, true], ["Admissions crediting me", "10.2%", "15.4%", 1.5, 0.08290163614154694, false], ["Me restating myself", "6%", "8%", 1.3333333333333335, 1.0, false], ["Characters I type per request", "66", "86", 1.303030303030303, 0.03457824566797196, true]];
+var WK = [["2026-06-01", 20, 0.0, 0.0, "sonnet-4-6", "s3"], ["2026-06-08", 54, 14.8, 13.8, "sonnet-4-6", "s3"], ["2026-06-15", 33, 3.0, 2.2, "sonnet-4-6", "s3"], ["2026-06-22", 88, 10.2, 9.5, "sonnet-4-6", "s3"], ["2026-06-29", 4, 0.0, 0.0, "sonnet-4-6", "s3"], ["2026-07-06", 81, 3.7, 3.4, "mixed", "mx"], ["2026-07-13", 1, 0.0, 0.0, "opus-4-8", "s1"], ["2026-07-20", 187, 11.8, 13.3, "opus-4-8", "s1"], ["2026-07-27", 137, 19.7, 30.5, "mixed", "mx"], ["2026-08-03", 140, 25.0, 30.2, "opus-5", "s2"], ["2026-08-10", 108, 22.2, 23.1, "opus-5", "s2"]];
+var SMALL_N = 20;
+/* Chart rendering. FX, WK and SMALL_N are injected above by report.py --
+   nothing in this file is edited to publish new numbers. */
 (function () {
   var NS = "http://www.w3.org/2000/svg";
   var tip = document.getElementById("tip");
@@ -520,30 +467,42 @@
   }
   function hide() { tip.style.opacity = "0"; }
 
-  /* ---------------- effect sizes ---------------- */
-  var FX = [
-    ["Blind-labelled friction turns", "12%",     "32%",     2.67, "0.007",   true],
-    ["Requests ending in a concession","15.8%",  "32.9%",   2.09, "<0.0001", true],
-    ["Admissions crediting me",        "11.0%",  "20.1%",   1.84, "0.013",   true],
-    ["Tool calls per request",         "5",      "9",       1.80, "0.008",   true],
-    ["Characters I type per request",  "66",     "110",     1.67, "<0.0001", true],
-    ["Output tokens per request",      "16,641", "25,160",  1.51, "0.001",   true],
-    ["Me restating myself",            "6%",     "8%",      1.33, "1.00",    false]
-  ];
+  /* Smallest round step that covers `v` in `n` divisions. Rounding the whole
+     span to a power of ten instead would leave half the plot empty -- a 25%
+     max on a 0-50 axis reads as a much smaller number than it is. */
+  function niceStep(v, n) {
+    if (!(v > 0)) return 1;
+    var raw = v / n;
+    var p = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var s = raw / p;
+    return (s <= 1 ? 1 : s <= 2 ? 2 : s <= 2.5 ? 2.5 : s <= 5 ? 5 : 10) * p;
+  }
+  function ticks(step, n) {
+    var out = [];
+    for (var i = 0; i <= n; i++) out.push(step * i);
+    return out;
+  }
 
+  /* ---------------- effect sizes ---------------- */
   (function drawFx() {
+    if (!FX.length) return;
     var W = 720, rowH = 40, top = 34, H = top + FX.length * rowH + 26;
-    var x0 = 258, x1 = 690, lo = 1, hi = 2.8;
+    var x0 = 258, x1 = 690, lo = 1, nTick = 4;
+    var span = Math.max(0.4, Math.max.apply(null, FX.map(function (d) {
+      return d[3];
+    })) * 1.06 - lo);
+    var step = niceStep(span, nTick), hi = lo + step * nTick;
     var sx = function (v) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); };
     var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
-      "aria-label": "Multiplier change from opus-4-8 to opus-5 across seven measures" });
+      "aria-label": "Multiplier change across " + FX.length + " measures" });
 
-    [1, 1.5, 2, 2.5].forEach(function (g) {
+    ticks(step, nTick).map(function (t) { return lo + t; }).forEach(function (g) {
       svg.appendChild(el("line", { x1: sx(g), x2: sx(g), y1: top - 16, y2: H - 26,
-        stroke: g === 1 ? "var(--rule-2)" : "var(--rule)", "stroke-width": g === 1 ? 1.5 : 1 }));
+        stroke: g === 1 ? "var(--rule-2)" : "var(--rule)",
+        "stroke-width": g === 1 ? 1.5 : 1 }));
       var t = el("text", { x: sx(g), y: H - 10, "text-anchor": "middle",
         fill: "var(--muted)", "font-size": "11", "font-family": "var(--f-mono)" });
-      t.textContent = g.toFixed(1) + "×";
+      t.textContent = (step < 0.2 ? g.toFixed(2) : g.toFixed(1)) + "×";
       svg.appendChild(t);
     });
 
@@ -554,15 +513,18 @@
       lab.textContent = d[0];
       svg.appendChild(lab);
 
-      svg.appendChild(el("line", { x1: sx(1), x2: sx(d[3]), y1: y, y2: y,
+      /* a multiplier below 1 draws leftward from the baseline, and is clamped
+         into view rather than silently running off the axis */
+      var v = Math.max(lo, Math.min(hi, d[3]));
+      svg.appendChild(el("line", { x1: sx(1), x2: sx(v), y1: y, y2: y,
         stroke: col, "stroke-width": 2, "stroke-linecap": "round" }));
-      svg.appendChild(el("circle", { cx: sx(d[3]), cy: y, r: 5.5, fill: col,
+      svg.appendChild(el("circle", { cx: sx(v), cy: y, r: 5.5, fill: col,
         stroke: "var(--surface)", "stroke-width": 2 }));
 
-      var v = el("text", { x: sx(d[3]) + 13, y: y + 4, fill: "var(--ink-2)",
+      var vt = el("text", { x: sx(v) + 13, y: y + 4, fill: "var(--ink-2)",
         "font-size": "12", "font-family": "var(--f-mono)" });
-      v.textContent = d[3].toFixed(2) + "×";
-      svg.appendChild(v);
+      vt.textContent = d[3].toFixed(2) + "×";
+      svg.appendChild(vt);
 
       var hit = el("rect", { x: 0, y: y - rowH / 2, width: W, height: rowH,
         fill: "transparent", style: "cursor:crosshair" });
@@ -584,51 +546,44 @@
   })();
 
   /* ---------------- weekly ---------------- */
-  var WK = [
-    ["2026-06-01",  20,  0.0,  0.0, "sonnet-4-6", "s3"],
-    ["2026-06-08",  54, 14.8, 13.8, "sonnet-4-6", "s3"],
-    ["2026-06-15",  33,  3.0,  2.2, "sonnet-4-6", "s3"],
-    ["2026-06-22",  88, 10.2,  9.5, "sonnet-4-6", "s3"],
-    ["2026-06-29",   4,  0.0,  0.0, "sonnet-4-6", "s3"],
-    ["2026-07-06",  81,  3.7,  3.4, "mixed",      "mx"],
-    ["2026-07-13",   1,  0.0,  0.0, "opus-4-8",   "s1"],
-    ["2026-07-20", 187, 11.8, 13.3, "opus-4-8",   "s1"],
-    ["2026-07-27", 137, 19.7, 30.5, "mixed",      "mx"],
-    ["2026-08-03", 101, 25.7, 33.1, "opus-5",     "s2"]
-  ];
-  var COL = { s1: "var(--s1)", s2: "var(--s2)", s3: "var(--s3)", mx: "var(--rule-2)" };
+  var COL = { s1: "var(--s1)", s2: "var(--s2)", s3: "var(--s3)",
+              s4: "var(--s4)", mx: "var(--rule-2)" };
 
   (function drawWk() {
+    if (!WK.length) return;
     var W = 720, H = 300, padL = 44, padR = 8, top = 16, base = 214;
     var n = WK.length, slot = (W - padL - padR) / n, bw = Math.min(42, slot - 16);
-    var max = 30;
+    var nTick = 3;
+    var wstep = niceStep(Math.max.apply(null, WK.map(function (d) {
+      return d[2];
+    })) * 1.1, nTick);
+    var max = wstep * nTick;
     var sy = function (v) { return base - (v / max) * (base - top); };
     var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img",
       "aria-label": "Weekly share of requests ending in a concession, by dominant model" });
 
-    [0, 10, 20, 30].forEach(function (g) {
+    ticks(wstep, nTick).forEach(function (g) {
       svg.appendChild(el("line", { x1: padL, x2: W - padR, y1: sy(g), y2: sy(g),
         stroke: g === 0 ? "var(--rule-2)" : "var(--rule)" }));
       var t = el("text", { x: padL - 10, y: sy(g) + 4, "text-anchor": "end",
         fill: "var(--muted)", "font-size": "11", "font-family": "var(--f-mono)" });
-      t.textContent = g + "%";
+      t.textContent = Math.round(g) + "%";
       svg.appendChild(t);
     });
 
     WK.forEach(function (d, i) {
-      var cx = padL + slot * i + slot / 2, small = d[1] < 20;
+      var cx = padL + slot * i + slot / 2, small = d[1] < SMALL_N;
       var h = Math.max(sy(0) - sy(d[2]), d[2] > 0 ? 3 : 0);
       if (h > 0) {
         var r = Math.min(4, h), x = cx - bw / 2, y = base - h;
-        var p = el("path", {
+        svg.appendChild(el("path", {
           d: "M" + x + " " + base + " L" + x + " " + (y + r) +
              " Q" + x + " " + y + " " + (x + r) + " " + y +
              " L" + (x + bw - r) + " " + y +
              " Q" + (x + bw) + " " + y + " " + (x + bw) + " " + (y + r) +
              " L" + (x + bw) + " " + base + " Z",
-          fill: COL[d[5]], opacity: small ? 0.32 : 1
-        });
-        svg.appendChild(p);
+          fill: COL[d[5]] || COL.mx, opacity: small ? 0.32 : 1
+        }));
       }
       var lv = el("text", { x: cx, y: base - h - 8, "text-anchor": "middle",
         fill: "var(--ink-2)", "font-size": "11.5", "font-family": "var(--f-mono)",
@@ -642,16 +597,17 @@
       svg.appendChild(dt);
 
       var nn = el("text", { x: cx, y: base + 33, "text-anchor": "middle",
-        fill: "var(--muted)", "font-size": "9.5", "font-family": "var(--f-mono)", opacity: .75 });
+        fill: "var(--muted)", "font-size": "9.5", "font-family": "var(--f-mono)",
+        opacity: .75 });
       nn.textContent = "n=" + d[1];
       svg.appendChild(nn);
 
-      var hit = el("rect", { x: cx - slot / 2, y: top, width: slot, height: base - top + 40,
-        fill: "transparent", style: "cursor:crosshair" });
+      var hit = el("rect", { x: cx - slot / 2, y: top, width: slot,
+        height: base - top + 40, fill: "transparent", style: "cursor:crosshair" });
       hit.addEventListener("mousemove", function (e) {
         show(e, "week of " + d[0] + "\n" + d[1] + " requests · " + d[4] +
           "\nconceded   " + d[2].toFixed(1) + "%\ntoken burn " + d[3].toFixed(1) + "%" +
-          (d[1] < 20 ? "\n⚠ sample too small to read" : ""));
+          (small ? "\n⚠ sample too small to read" : ""));
       });
       hit.addEventListener("mouseleave", hide);
       svg.appendChild(hit);
@@ -662,8 +618,9 @@
     document.getElementById("wktable").innerHTML = WK.map(function (d) {
       return "<tr><td>" + d[0] + "</td><td class='num'>" + d[1] + "</td><td class='num'>" +
         d[2].toFixed(1) + "%</td><td class='num'>" + d[3].toFixed(1) + "%</td><td>" +
-        d[4] + (d[1] < 20 ? " (low n)" : "") + "</td></tr>";
+        d[4] + (d[1] < SMALL_N ? " (low n)" : "") + "</td></tr>";
     }).join("");
   })();
 })();
+
 </script>
