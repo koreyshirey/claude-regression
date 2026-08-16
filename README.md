@@ -36,12 +36,73 @@ Not established, and not claimable from this data:
 - anything about reasoning depth (thinking text is not stored; see blind spots)
 - anything about any user but this one (n = 1; see Contributing data)
 
-## Contributing data
+## Capture your own data — 5 minutes, start today
 
-One machine's transcripts can't separate "the model got worse" from "this user's
-work got harder." If you run this against your own logs, the file worth sharing
-back is `metrics_history.jsonl` — counts only, no message content. Open an issue
-with it attached.
+One machine's transcripts can't separate "the model got worse" from "this
+user's work got harder." Yours can help. Requirements: Claude Code (any OS)
+and Python 3 — nothing else; the scripts are stdlib-only, read
+`~/.claude/projects`, write locally, and **transmit nothing**.
+
+**1. Stop the data loss first.** Claude Code deletes transcripts after 30 days
+by default, and it deletes your *oldest* — baseline — data first. In
+`~/.claude/settings.json` add:
+
+```json
+{ "cleanupPeriodDays": 180 }
+```
+
+Do this before anything else. Every day you wait, a day of history rots off
+the back.
+
+**2. Clone and run:**
+
+```
+git clone https://github.com/koreyshirey/claude-regression
+cd claude-regression
+python3 snapshot.py
+```
+
+That archives every transcript you still have, appends your weekly counts to
+`metrics_history.jsonl` (tagged with a random anonymous id — my rows stay
+untouched next to yours), and rebuilds `index.html` as a report of **your**
+data. `python3 snapshot.py --trend` prints your weekly table.
+
+**3. Make it automatic.** One run captures once; a `SessionStart` hook keeps
+capturing forever. In `~/.claude/settings.json` (use your real absolute path):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{
+      "type": "command",
+      "command": "/usr/bin/env python3 /FULL/PATH/TO/claude-regression/snapshot.py >/dev/null 2>&1 || true",
+      "timeout": 120,
+      "async": true
+    }]}]
+  }
+}
+```
+
+**4. Know what to expect.** If you start today with default settings, you only
+have the last ~30 days — probably one model. That still contributes your
+current concession-rate level, and it makes you a clean baseline for the
+*next* model transition, which is the comparison nobody can reconstruct after
+the fact. If you'd already raised the cleanup window, you may be sitting on a
+cross-model comparison right now.
+
+## Contributing data back
+
+The file worth sharing is `metrics_history.jsonl` — counts only, no message
+content, one JSON line per (source, week, model). A row looks like:
+
+```json
+{"source":"3f9c2a1b","week":"2026-08-10","model":"claude-opus-5","episodes":41,"conceded_pct":19.51,"out_tok_median":28712,...}
+```
+
+Attach it to an issue at
+https://github.com/koreyshirey/claude-regression/issues — sending the whole
+file is fine; my rows are already public and the source tags keep every
+contributor's data separate.
 
 Every row carries a `source` tag — a random 8-character id generated on first
 run and kept in a gitignored `.source` file (set `CLAUDE_REGRESSION_SOURCE` or
