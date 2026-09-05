@@ -250,14 +250,14 @@
       by hand.
     </p>
     <p class="byline">
-      <span>1,201 requests</span><span>2026-06-01 &rarr; 2026-08-31</span>
-      <span>opus-4-8 vs fable-5</span><span>generated 2026-09-04</span>
+      <span>1,209 requests</span><span>2026-06-01 &rarr; 2026-08-31</span>
+      <span>fable-5 vs opus-4-8</span><span>generated 2026-09-05</span>
     </p>
   </header>
 
   <div class="stats">
-    <div class="stat"><p class="k">Requests ending in a concession</p><p class="v">0.93&times;</p><p class="sub">12.8% &rarr; 11.9% per request<br>Fisher exact p = 0.81</p></div>
-    <div class="stat"><p class="k">Output tokens in conceded requests</p><p class="v">16.6%</p><p class="sub">down from 19.1%<br>share of all generated tokens</p></div>
+    <div class="stat"><p class="k">Requests ending in a concession</p><p class="v">1.09&times;</p><p class="sub">11.7% &rarr; 12.8% per request<br>Fisher exact p = 0.72</p></div>
+    <div class="stat"><p class="k">Output tokens in conceded requests</p><p class="v">19.1%</p><p class="sub">up from 16.5%<br>share of all generated tokens</p></div>
   </div>
 
   <section>
@@ -270,7 +270,7 @@
       infrastructure.
     </p>
     <p>
-      The comparison is <strong>opus-4-8</strong> against <strong>fable-5</strong>.
+      The comparison is <strong>fable-5</strong> against <strong>opus-4-8</strong>.
       Everything is normalised <strong>per request</strong> &mdash; one thing I
       asked for &mdash; rather than per message, because a chattier model emits
       more messages for the same work. Dividing by messages hides the effect
@@ -293,7 +293,7 @@
   <section>
     <h2>Effect sizes <span class="n">&sect;2</span></h2>
     <figure>
-      <p class="figtitle">Change from opus-4-8 to fable-5, per request</p>
+      <p class="figtitle">Change from fable-5 to opus-4-8, per request</p>
       <p class="figsub">multiplier &middot; baseline 1.0 = no change</p>
       <div id="fx"></div>
       <div class="legend">
@@ -304,7 +304,7 @@
         <summary>Show as table</summary>
         <div class="scroll">
           <table>
-            <thead><tr><th>Measure</th><th class="num">opus-4-8</th><th class="num">fable-5</th><th class="num">&times;</th><th class="num">p</th></tr></thead>
+            <thead><tr><th>Measure</th><th class="num">fable-5</th><th class="num">opus-4-8</th><th class="num">&times;</th><th class="num">p</th></tr></thead>
             <tbody id="fxtable"></tbody>
           </table>
         </div>
@@ -348,9 +348,9 @@
 
   <section>
     <h2>Verdicts <span class="n">&sect;4</span></h2>
-    <div class="verdict"><div class="vhead"><span class="chip nul">Not supported</span><h3>Requests ending in a concession moved &times;0.93</h3></div><p>Automated counting gives <strong>&times;0.93</strong> (p = 0.81), taking the share of requests that end with Claude conceding from <strong>12.8%</strong> to <strong>11.9%</strong>. The blind labelling has not been re-run against this pair.</p><p>A concession is an admission, not a verified error. More actual mistakes move this number &mdash; but so would a model that concedes more readily, one that recognises its own errors better, or a harder mix of work arriving in the same weeks.</p><p>Decomposed: my explicit pushback rate did not move (3.8% &rarr; 3.1% of requests, p = 0.83), so &ldquo;the human simply objected more&rdquo; is not what the data shows. Concessions that credit me rose from 9.7% to 8.5% (p = 0.68); admissions that credit no one &mdash; Claude flagging its own error unprompted &mdash; rose from 3.1% to 3.4% (p = 0.83) and are the largest mover. Whether those self-flagged corrections are real errors caught mid-task or a more self-correcting narration style, the transcripts cannot say.</p><p>Out-of-sample: restricted to fable-5 requests from weeks beginning 2026-08-10 or later &mdash; data that did not exist when this analysis was first run &mdash; the rate is <strong>12.1%</strong> (n = 313) against the same baseline, p = 0.81. Not significant on its own yet; more weeks are needed.</p></div>
-    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>It costs more, and I supply more of the context</h3></div><p>Median output tokens per request fell <strong>5%</strong> (p = 0.46) and tool calls per request rose <strong>20%</strong> (p = 0.021). The share of all generated tokens spent inside requests that end in a concession went from <strong>19.1% to 16.6%</strong>. Rising tool calls and tokens are as consistent with a deliberately more thorough agentic style as with churn &mdash; the churn proxies in the final verdict do not separate the two &mdash; but the cost per request is real either way.</p><p>Meanwhile the characters <em>I</em> type per request rose <strong>25%</strong> (p = 0.001). Front-loading more context is not preventing the friction; both moved together.</p></div>
-    <div class="verdict"><div class="vhead"><span class="chip unk">Unmeasurable</span><h3>Reasoning quality cannot be assessed at all</h3></div><p>Thinking content is stored as an empty string plus an encrypted signature for every model except sonnet-4-6. There is no reasoning text to measure. Any claim that &ldquo;thinking got shorter&rdquo; would be an artifact of a storage policy change, not a finding.</p><p>Behavioural proxies for flailing: self-reversals 4&rarr;2 per 100 requests, p = 0.26; failed edits 4&rarr;1 per 100 requests, p = 0.033; duplicate commands 9&rarr;4 per 100 requests, p = 0.013; repeated file reads 35&rarr;5 per 100 requests, p = <0.0001. More tokens and more tool calls per request are equally consistent with thoroughness and with churn; nothing here separates them.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip nul">Not supported</span><h3>Requests ending in a concession moved &times;1.09</h3></div><p>Automated counting gives <strong>&times;1.09</strong> (p = 0.72), taking the share of requests that end with Claude conceding from <strong>11.7%</strong> to <strong>12.8%</strong>. The blind labelling has not been re-run against this pair.</p><p>A concession is an admission, not a verified error. More actual mistakes move this number &mdash; but so would a model that concedes more readily, one that recognises its own errors better, or a harder mix of work arriving in the same weeks.</p><p>Decomposed: my explicit pushback rate did not move (3.1% &rarr; 3.8% of requests, p = 0.67), so &ldquo;the human simply objected more&rdquo; is not what the data shows. Concessions that credit me rose from 8.3% to 9.7% (p = 0.58); admissions that credit no one &mdash; Claude flagging its own error unprompted &mdash; rose from 3.4% to 3.1% (p = 1.00) and are the largest mover. Whether those self-flagged corrections are real errors caught mid-task or a more self-correcting narration style, the transcripts cannot say.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip sup">Supported</span><h3>It costs more, and I supply more of the context</h3></div><p>Median output tokens per request rose <strong>8%</strong> (p = 0.39) and tool calls per request fell <strong>17%</strong> (p = 0.025). The share of all generated tokens spent inside requests that end in a concession went from <strong>16.5% to 19.1%</strong>. Rising tool calls and tokens are as consistent with a deliberately more thorough agentic style as with churn &mdash; the churn proxies in the final verdict do not separate the two &mdash; but the cost per request is real either way.</p><p>Meanwhile the characters <em>I</em> type per request fell <strong>20%</strong> (p = 0.00085). Front-loading more context is not preventing the friction; both moved together.</p></div>
+    <div class="verdict"><div class="vhead"><span class="chip unk">Unmeasurable</span><h3>Reasoning quality cannot be assessed at all</h3></div><p>Thinking content is stored as an empty string plus an encrypted signature for every model except sonnet-4-6. There is no reasoning text to measure. Any claim that &ldquo;thinking got shorter&rdquo; would be an artifact of a storage policy change, not a finding.</p><p>Behavioural proxies for flailing: self-reversals 2&rarr;4 per 100 requests, p = 0.18; failed edits 1&rarr;4 per 100 requests, p = 0.019; duplicate commands 4&rarr;9 per 100 requests, p = 0.009; repeated file reads 5&rarr;35 per 100 requests, p = <0.0001. More tokens and more tool calls per request are equally consistent with thoroughness and with churn; nothing here separates them.</p></div>
   </section>
 
   <section>
@@ -385,7 +385,7 @@
         indistinguishable from anything that changed with the model.
       </p>
       <p>
-        <strong>Task mix shifted.</strong> The fable-5 sessions skew toward harder
+        <strong>Task mix shifted.</strong> The opus-4-8 sessions skew toward harder
         debugging, where errors are likelier regardless of which model is
         running.
       </p>
@@ -438,8 +438,8 @@
   </section>
 
   <p class="foot">
-    Generated 2026-09-04 from 1,201 requests &middot; 2026-06-01 to 2026-08-31
-    &middot; models: fable-5, opus-4-8, opus-5, sonnet-4-6, sonnet-5 &middot; rebuild with
+    Generated 2026-09-05 from 1,209 requests &middot; 2026-06-01 to 2026-08-31
+    &middot; models: fable-5, fable-5-1, opus-4-8, opus-5, sonnet-4-6, sonnet-5 &middot; rebuild with
     <code>python3 report.py</code>
   </p>
 
@@ -449,8 +449,8 @@
 <div class="tip" id="tip" role="status" aria-live="polite"></div>
 
 <script>
-var FX = [["Characters I type per request", "70", "88", 1.24822695035461, 0.0012740179730379442, true], ["Tool calls per request", "5", "6", 1.2, 0.02145765741042638, true], ["Output tokens per request", "16,530", "15,667", 0.9478205632354275, 0.4575174428852409, false], ["Requests ending in a concession", "12.8%", "11.9%", 0.9297346891964218, 0.8102131084264337, false], ["Admissions crediting me", "10.6%", "8.5%", 0.7966070440715471, 0.419472382310024, false]];
-var WK = [["2026-06-01", 20, 0.0, 0.0, "sonnet-4-6", "s3"], ["2026-06-08", 54, 14.8, 13.8, "sonnet-4-6", "s3"], ["2026-06-15", 33, 3.0, 2.2, "sonnet-4-6", "s3"], ["2026-06-22", 88, 10.2, 9.5, "sonnet-4-6", "s3"], ["2026-06-29", 4, 0.0, 0.0, "sonnet-4-6", "s3"], ["2026-07-06", 81, 3.7, 3.4, "mixed", "mx"], ["2026-07-13", 1, 0.0, 0.0, "opus-4-8", "s1"], ["2026-07-20", 187, 11.8, 13.3, "opus-4-8", "s1"], ["2026-07-27", 137, 19.7, 30.5, "mixed", "mx"], ["2026-08-03", 140, 25.0, 30.2, "opus-5", "s2"], ["2026-08-10", 127, 22.8, 24.4, "opus-5", "s2"], ["2026-08-17", 170, 14.7, 16.2, "fable-5", "s4"], ["2026-08-24", 41, 14.6, 20.5, "fable-5", "s4"], ["2026-08-31", 118, 7.6, 13.3, "fable-5", "s4"]];
+var FX = [["Admissions crediting me", "8.3%", "10.6%", 1.275, 0.34792641379470796, false], ["Requests ending in a concession", "11.7%", "12.8%", 1.0924342105263158, 0.7192664023780879, false], ["Output tokens per request", "15,266", "16,530", 1.0827301608096158, 0.3927573077629296, false], ["Tool calls per request", "6", "5", 0.8333333333333334, 0.024531051306712737, true], ["Characters I type per request", "88", "70", 0.7966101694915254, 0.0008484724160107149, true]];
+var WK = [["2026-06-01", 20, 0.0, 0.0, "sonnet-4-6", "s3"], ["2026-06-08", 54, 14.8, 13.8, "sonnet-4-6", "s3"], ["2026-06-15", 33, 3.0, 2.2, "sonnet-4-6", "s3"], ["2026-06-22", 88, 10.2, 9.5, "sonnet-4-6", "s3"], ["2026-06-29", 4, 0.0, 0.0, "sonnet-4-6", "s3"], ["2026-07-06", 81, 3.7, 3.4, "mixed", "mx"], ["2026-07-13", 1, 0.0, 0.0, "opus-4-8", "s1"], ["2026-07-20", 187, 11.8, 13.3, "opus-4-8", "s1"], ["2026-07-27", 137, 19.7, 30.5, "mixed", "mx"], ["2026-08-03", 140, 25.0, 30.2, "opus-5", "s2"], ["2026-08-10", 127, 22.8, 24.4, "opus-5", "s2"], ["2026-08-17", 170, 14.7, 16.2, "fable-5", "s4"], ["2026-08-24", 41, 14.6, 20.5, "fable-5", "s4"], ["2026-08-31", 126, 7.1, 12.6, "fable-5", "s4"]];
 var SMALL_N = 20;
 /* Chart rendering. FX, WK and SMALL_N are injected above by report.py --
    nothing in this file is edited to publish new numbers. */
